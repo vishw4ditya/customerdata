@@ -1,56 +1,37 @@
-import Datastore from 'nedb-promises';
-import path from 'path';
-import fs from 'fs';
+import mongoose from 'mongoose';
 
-// Helper to determine if we are in the Next.js build phase
-const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build' || process.env.NODE_ENV === 'test';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/customer-management';
 
-const getDbInstance = (filename: string) => {
-  if (isBuildPhase) {
-    // Return a dummy object that mimics the Datastore interface to prevent build errors
-    return {
-      find: () => Promise.resolve([]),
-      findOne: () => Promise.resolve(null),
-      insert: () => Promise.resolve({}),
-      update: () => Promise.resolve(0),
-      remove: () => Promise.resolve(0),
-      count: () => Promise.resolve(0),
-    } as any;
-  }
+if (!mongoose.connections[0].readyState) {
+  mongoose.connect(MONGODB_URI).catch((err: any) => console.error('MongoDB connection error:', err));
+}
 
-  const dataDir = path.join(process.cwd(), 'data');
-  if (!fs.existsSync(dataDir)) {
-    try {
-      fs.mkdirSync(dataDir, { recursive: true });
-    } catch (e) {
-      console.error('Failed to create data directory:', e);
-    }
-  }
-
-  return Datastore.create({ 
-    filename: path.join(dataDir, filename), 
-    autoload: true 
-  });
-};
-
-// Lazy initialization using Proxies
-let adminsDbInstance: any = null;
-let customersDbInstance: any = null;
-
-export const adminsDb = new Proxy({} as any, {
-  get: (target, prop) => {
-    if (!adminsDbInstance) {
-      adminsDbInstance = getDbInstance('admins.db');
-    }
-    return adminsDbInstance[prop];
-  }
+const AdminSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  phone: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  adminID: { type: String, required: true, unique: true },
+  role: { type: String, enum: ['superadmin', 'admin'], default: 'admin' },
+  createdAt: { type: Date, default: Date.now },
 });
 
-export const customersDb = new Proxy({} as any, {
-  get: (target, prop) => {
-    if (!customersDbInstance) {
-      customersDbInstance = getDbInstance('customers.db');
-    }
-    return customersDbInstance[prop];
-  }
+const CustomerSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  phone: { type: String, required: true },
+  address: { type: String, required: true },
+  addedBy: { type: String, required: true },
+  lastUpdatedBy: { type: String },
+  count: { type: Number, default: 1 },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
+
+// Compound index for duplicate check
+CustomerSchema.index({ name: 1, phone: 1 });
+
+export const Admin = mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
+export const Customer = mongoose.models.Customer || mongoose.model('Customer', CustomerSchema);
+
+// For backward compatibility during migration
+export const adminsDb = Admin;
+export const customersDb = Customer;

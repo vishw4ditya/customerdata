@@ -21,11 +21,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Phone number already registered' }, { status: 400 });
     }
 
-    const adminCount = await adminsDb.count({});
+    const adminCount = await adminsDb.countDocuments({});
     const role = adminCount === 0 ? 'superadmin' : 'admin';
 
     const adminID = generateAdminID();
-    const newAdmin = await adminsDb.insert({
+    const newAdmin = await adminsDb.create({
       name,
       phone,
       password, // In a real app, hash this!

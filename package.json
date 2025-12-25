@@ -16,7 +16,7 @@
     "clsx": "latest",
     "framer-motion": "latest",
     "lucide-react": "latest",
-    "nedb-promises": "^6.2.3",
+    "mongoose": "^9.0.2",
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",

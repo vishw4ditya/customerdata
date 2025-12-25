@@ -5,11 +5,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
-    const admins = await adminsDb.find({ role: { $ne: 'superadmin' } }).sort({ createdAt: -1 }) as any[];
+    const admins = await adminsDb.find({ role: { $ne: 'superadmin' } }).sort({ createdAt: -1 }).lean() as any[];
     
     // Enrich each admin with their customer count
     const enrichedAdmins = await Promise.all(admins.map(async (admin) => {
-      const customerCount = await customersDb.count({ addedBy: admin.adminID });
+      const customerCount = await customersDb.countDocuments({ addedBy: admin.adminID });
       return {
         ...admin,
         customerCount

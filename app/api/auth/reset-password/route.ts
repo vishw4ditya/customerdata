@@ -14,7 +14,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid Admin ID' }, { status: 404 });
     }
 
-    await adminsDb.update({ adminID }, { $set: { password: newPassword } });
+    await adminsDb.updateOne({ adminID }, { $set: { password: newPassword } });
 
     return NextResponse.json({ message: 'Password reset successful' });
   } catch (error) {

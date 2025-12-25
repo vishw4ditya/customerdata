@@ -14,7 +14,7 @@ export async function GET(request: Request) {
       query = { addedBy: adminID };
     }
 
-    const customers = await customersDb.find(query).sort({ updatedAt: -1 });
+    const customers = await customersDb.find(query).sort({ updatedAt: -1 }).lean();
     return NextResponse.json(customers);
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const existingCustomer = await customersDb.findOne({ name, phone }) as any;
 
     if (existingCustomer) {
-      const updated = await customersDb.update(
+      const updated = await customersDb.findOneAndUpdate(
         { _id: existingCustomer._id },
         { $set: { 
             count: (existingCustomer.count || 1) + 1, 
@@ -42,11 +42,11 @@ export async function POST(request: Request) {
             lastUpdatedBy: addedBy // Track who updated it last
           } 
         },
-        { returnUpdatedDocs: true }
+        { new: true }
       );
       return NextResponse.json({ message: 'Customer updated', customer: updated });
     } else {
-      const newCustomer = await customersDb.insert({
+      const newCustomer = await customersDb.create({
         name,
         phone,
         address,
@@ -77,7 +77,7 @@ export async function PATCH(request: Request) {
 
     if (action === 'decrement') {
       if (customer.count > 1) {
-        await customersDb.update({ _id: id }, { $set: { count: customer.count - 1, updatedAt: new Date() } });
+        await customersDb.updateOne({ _id: id }, { $set: { count: customer.count - 1, updatedAt: new Date() } });
         return NextResponse.json({ message: 'Visit removed' });
       } else {
         // If count is 1, maybe keep it at 1 or handle as delete? 
@@ -87,7 +87,7 @@ export async function PATCH(request: Request) {
     }
 
     // Default: Edit details
-    await customersDb.update(
+    await customersDb.updateOne(
       { _id: id }, 
       { $set: { 
           name: name || customer.name, 
@@ -112,7 +112,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
     }
 
-    await customersDb.remove({ _id: id }, {});
+    await customersDb.deleteOne({ _id: id });
     return NextResponse.json({ message: 'Customer removed' });
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

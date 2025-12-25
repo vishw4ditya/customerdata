@@ -18,7 +18,7 @@ export async function POST(request: Request) {
       });
     }
 
-    const admin = await adminsDb.findOne({ phone, password }) as any;
+    const admin = await adminsDb.findOne({ phone, password }).lean() as any;
     if (!admin) {
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
