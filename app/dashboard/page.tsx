@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Plus, Trash2, MapPin, Phone, Hash, Search, LayoutDashboard, Settings, Bell, ArrowRight, Edit3, MinusCircle, RotateCcw, X, ShieldCheck, Sun, Moon, Sparkles, Users, ShieldAlert } from 'lucide-react';
+import { User, LogOut, Plus, Trash2, MapPin, Phone, Hash, Search, LayoutDashboard, Settings, Bell, ArrowRight, Edit3, MinusCircle, RotateCcw, X, ShieldCheck, Sun, Moon, Sparkles, Users, ShieldAlert, Menu } from 'lucide-react';
 
 interface Customer {
   _id: string;
@@ -31,6 +31,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'dashboard' | 'customers' | 'settings' | 'admins'>('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark' | 'glass'>('glass');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [lastDeleted, setLastDeleted] = useState<Customer | null>(null);
@@ -224,20 +225,38 @@ export default function Dashboard() {
 
   return (
     <div className={`min-h-screen flex transition-colors duration-500 ${themeClasses[theme]}`}>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-950/50 backdrop-blur-sm z-40 lg:hidden transition-all duration-300"
+          onClick={() => setIsMobileMenuOpen(false)}
+        ></div>
+      )}
+
       {/* Sidebar */}
-      <aside className={`hidden lg:flex w-72 flex-col fixed inset-y-0 shadow-2xl z-50 ${
+      <aside className={`fixed inset-y-0 left-0 w-72 flex flex-col shadow-2xl z-50 transition-transform duration-300 lg:translate-x-0 ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      } ${
         theme === 'dark' ? 'bg-slate-900 border-r border-white/5' : 'bg-slate-900'
       }`}>
-        <div className="p-8 flex items-center space-x-3">
-          <div className="bg-primary-500 p-2.5 rounded-xl shadow-lg shadow-primary-500/20">
-            <LayoutDashboard className="text-white w-6 h-6" />
+        <div className="p-8 flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-primary-500 p-2.5 rounded-xl shadow-lg shadow-primary-500/20">
+              <LayoutDashboard className="text-white w-6 h-6" />
+            </div>
+            <span className="text-white font-black text-xl tracking-tight">CRM Cloud</span>
           </div>
-          <span className="text-white font-black text-xl tracking-tight">CRM Cloud</span>
+          <button 
+            className="lg:hidden text-slate-400 hover:text-white"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-2">
           <button 
-            onClick={() => setCurrentView('dashboard')}
+            onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }}
             className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 font-bold transition-all border ${
               currentView === 'dashboard' 
                 ? 'bg-primary-600/10 text-primary-400 border-primary-600/20' 
@@ -248,7 +267,7 @@ export default function Dashboard() {
             <span>Dashboard</span>
           </button>
           <button 
-            onClick={() => setCurrentView('customers')}
+            onClick={() => { setCurrentView('customers'); setIsMobileMenuOpen(false); }}
             className={`w-full px-4 py-3 rounded-xl flex items-center justify-between font-bold transition-all border ${
               currentView === 'customers' 
                 ? 'bg-primary-600/10 text-primary-400 border-primary-600/20' 
@@ -267,7 +286,7 @@ export default function Dashboard() {
           </button>
           {admin.role === 'superadmin' && (
             <button 
-              onClick={() => setCurrentView('admins')}
+              onClick={() => { setCurrentView('admins'); setIsMobileMenuOpen(false); }}
               className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 font-bold transition-all border ${
                 currentView === 'admins' 
                   ? 'bg-primary-600/10 text-primary-400 border-primary-600/20' 
@@ -279,7 +298,7 @@ export default function Dashboard() {
             </button>
           )}
           <button 
-            onClick={() => setCurrentView('settings')}
+            onClick={() => { setCurrentView('settings'); setIsMobileMenuOpen(false); }}
             className={`w-full px-4 py-3 rounded-xl flex items-center space-x-3 font-bold transition-all border ${
               currentView === 'settings' 
                 ? 'bg-primary-600/10 text-primary-400 border-primary-600/20' 
@@ -325,6 +344,16 @@ export default function Dashboard() {
         <header className={`backdrop-blur-md border-b sticky top-0 z-40 px-4 md:px-8 h-20 flex items-center justify-between transition-colors duration-500 ${
           theme === 'dark' ? 'bg-slate-950/80 border-white/5' : 'bg-white/80 border-slate-100'
         }`}>
+          <div className="flex items-center space-x-4 lg:hidden">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-all"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+            <span className={`font-black text-lg tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>CRM</span>
+          </div>
+
           <div className="relative max-w-md w-full hidden md:block">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <Search className="h-4 w-4 text-slate-400" />
