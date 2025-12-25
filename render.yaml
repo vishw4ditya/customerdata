@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: customer-management-crm
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.0.0
+    # Note: On Render's free tier, local .db files are ephemeral.
+    # To keep data permanently, you would need to use Render's "Disks" (paid)
+    # or switch to a managed DB like MongoDB Atlas.
+
