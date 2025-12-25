@@ -22,6 +22,7 @@ const CustomerSchema = new mongoose.Schema({
   addedBy: { type: String, required: true },
   lastUpdatedBy: { type: String },
   count: { type: Number, default: 1 },
+  followUpDate: { type: String }, // Store as YYYY-MM-DD for easy comparison
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

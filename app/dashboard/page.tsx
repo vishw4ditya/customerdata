@@ -10,6 +10,7 @@ interface Customer {
   phone: string;
   address: string;
   count: number;
+  followUpDate?: string;
   createdAt: string;
   addedBy?: string;
 }
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState<'dashboard' | 'customers' | 'settings' | 'admins'>('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark' | 'glass'>('glass');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '', followUpDate: '' });
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [lastDeleted, setLastDeleted] = useState<Customer | null>(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -72,6 +73,19 @@ export default function Dashboard() {
       const res = await fetch(`/api/customers?adminID=${adminData.adminID}&role=${adminData.role}`);
       const data = await res.json();
       setCustomers(data);
+      
+      // Check for follow-up reminders
+      const today = new Date().toISOString().split('T')[0];
+      const dueFollowUps = data.filter((c: Customer) => c.followUpDate === today);
+      
+      if (dueFollowUps.length > 0) {
+        setPopSms({
+          show: true,
+          message: `VISIT REMINDER: You have ${dueFollowUps.length} customer visit(s) scheduled for today: ${dueFollowUps.map((c: any) => c.name).join(', ')}`,
+          type: 'info'
+        });
+        setTimeout(() => setPopSms(prev => ({ ...prev, show: false })), 10000);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -112,7 +126,7 @@ export default function Dashboard() {
 
       if (res.ok) {
         const data = await res.json();
-        setFormData({ name: '', phone: '', address: '' });
+        setFormData({ name: '', phone: '', address: '', followUpDate: '' });
         setEditingCustomer(null);
         fetchCustomers();
 
@@ -187,14 +201,15 @@ export default function Dashboard() {
     setFormData({
       name: customer.name,
       phone: customer.phone,
-      address: customer.address
+      address: customer.address,
+      followUpDate: customer.followUpDate || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEdit = () => {
     setEditingCustomer(null);
-    setFormData({ name: '', phone: '', address: '' });
+    setFormData({ name: '', phone: '', address: '', followUpDate: '' });
   };
 
   const filteredCustomers = customers.filter(c => 
@@ -452,6 +467,19 @@ export default function Dashboard() {
                       />
                     </div>
 
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Follow-up Visit Date (Optional)</label>
+                      <input
+                        type="date"
+                        className={`w-full px-4 py-4 border-2 rounded-2xl focus:ring-4 focus:ring-primary-500/5 focus:border-primary-500 outline-none transition-all font-medium ${
+                          theme === 'dark' ? 'bg-slate-900 border-white/5 text-white' : 'bg-slate-50 border-slate-50 text-slate-900'
+                        }`}
+                        value={formData.followUpDate}
+                        onChange={(e) => setFormData(prev => ({ ...prev, followUpDate: e.target.value }))}
+                      />
+                      <p className="text-[10px] text-slate-400 ml-1 italic">Admin will get a popup reminder on this date</p>
+                    </div>
+
                     <button 
                       type="submit" 
                       disabled={submitting}
@@ -564,11 +592,19 @@ export default function Dashboard() {
                             </div>
                           </div>
 
-                          <div className={`mt-6 flex items-center justify-between pt-6 border-t ${theme === 'dark' ? 'border-white/5' : 'border-slate-50'}`}>
-                            <div className="flex items-center space-x-2 text-primary-600">
-                              <Hash className="w-4 h-4" />
-                              <span className="text-sm font-black tracking-tight">{customer.count} Visits Recorded</span>
+                          <div className={`mt-6 flex flex-col space-y-3 pt-6 border-t ${theme === 'dark' ? 'border-white/5' : 'border-slate-50'}`}>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2 text-primary-600">
+                                <Hash className="w-4 h-4" />
+                                <span className="text-sm font-black tracking-tight">{customer.count} Visits Recorded</span>
+                              </div>
                             </div>
+                            {customer.followUpDate && (
+                              <div className="flex items-center space-x-2 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-100">
+                                <Bell className="w-3.5 h-3.5" />
+                                <span className="text-xs font-bold">Follow-up: {customer.followUpDate}</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -642,6 +678,7 @@ export default function Dashboard() {
                           <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Customer</th>
                           <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Contact Details</th>
                           <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Address</th>
+                          <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Follow-up</th>
                           {admin.role === 'superadmin' && <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Added By</th>}
                           <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Engagement</th>
                           <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -672,6 +709,16 @@ export default function Dashboard() {
                                 <MapPin className="w-3.5 h-3.5 mr-2 text-slate-400 mt-1 shrink-0" />
                                 <span className="line-clamp-1">{customer.address}</span>
                               </div>
+                            </td>
+                            <td className="px-8 py-5">
+                              {customer.followUpDate ? (
+                                <div className="flex items-center space-x-2 text-amber-600 font-bold text-xs">
+                                  <Bell className="w-3.5 h-3.5" />
+                                  <span>{customer.followUpDate}</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-300 text-xs">No visit set</span>
+                              )}
                             </td>
                             {admin.role === 'superadmin' && (
                               <td className="px-8 py-5">

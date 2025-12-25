@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { name, phone, address, addedBy } = await request.json();
+    const { name, phone, address, addedBy, followUpDate } = await request.json();
 
     if (!name || !phone || !address || !addedBy) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
@@ -38,6 +38,7 @@ export async function POST(request: Request) {
         { $set: { 
             count: (existingCustomer.count || 1) + 1, 
             address, 
+            followUpDate: followUpDate || existingCustomer.followUpDate,
             updatedAt: new Date(),
             lastUpdatedBy: addedBy // Track who updated it last
           } 
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
         address,
         addedBy, // Track who added it
         count: 1,
+        followUpDate,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -64,7 +66,7 @@ export async function POST(request: Request) {
 
 export async function PATCH(request: Request) {
   try {
-    const { id, name, phone, address, action } = await request.json();
+    const { id, name, phone, address, action, followUpDate } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing ID' }, { status: 400 });
@@ -93,6 +95,7 @@ export async function PATCH(request: Request) {
           name: name || customer.name, 
           phone: phone || customer.phone, 
           address: address || customer.address,
+          followUpDate: followUpDate || customer.followUpDate,
           updatedAt: new Date() 
         } 
       }
